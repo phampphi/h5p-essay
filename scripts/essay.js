@@ -49,6 +49,7 @@ H5P.Essay = function ($, Question) {
         feedbackHeader: 'Feedback',
         solutionTitle: 'Sample solution',
         remainingChars: 'Remaining characters: @chars',
+        remainingWords: '@words / @total Word Limit',
         notEnoughChars: 'You must enter at least @chars characters!',
         messageSave: 'saved',
         ariaYourResult: 'You got @score out of @total points',
@@ -151,7 +152,9 @@ H5P.Essay = function ($, Question) {
       'taskDescription': this.params.taskDescription,
       'placeholderText': this.params.placeholderText,
       'maximumLength': this.params.behaviour.maximumLength,
+      'maximumWord': this.params.behaviour.maximumWord,
       'remainingChars': this.params.remainingChars,
+      'remainingWords': this.params.remainingWords,
       'inputFieldSize': this.params.behaviour.inputFieldSize
     }, this.previousState);
 

@@ -57,7 +57,12 @@
       "hr",
       "pre",
       "code"
-    ]
+    ],
+    "font": {
+      "size": true,
+      "color": true,
+      "background": true
+    }
   },
   {
     "name": "placeholderText",
@@ -339,6 +344,24 @@
         "min": "0"
       },
       {
+        "name": "minimumWord",
+        "label": "Minimum number of words",
+        "type": "number",
+        "description": "Specify the minimum number of words that the user must enter.",
+        "importance": "low",
+        "optional": true,
+        "min": "0"
+      },
+      {
+        "name": "maximumWord",
+        "label": "Maximum number of words",
+        "type": "number",
+        "description": "Specify the maximum number of words that the user can enter.",
+        "importance": "low",
+        "optional": true,
+        "min": "0"
+      },
+      {
         "name": "inputFieldSize",
         "label": "Input field size",
         "type": "select",
@@ -356,6 +379,10 @@
           {
             "value": "10",
             "label": "10 lines"
+          },
+          {
+            "value": "20",
+            "label": "20 lines"
           }
         ],
         "default": "10"

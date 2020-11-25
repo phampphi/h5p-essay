@@ -150,11 +150,22 @@ var H5P = H5P || {};
   };
 
   /**
+   * Compute the remaining number of words.
+   * @return {number} Number of words left.
+   */
+  Essay.InputField.prototype.computeRemainingWords = function () {
+    return this.params.maximumWord - this.inputField.value.trim().split(' ').filter(a => a.trim().length > 0).length;
+  };
+
+  /**
    * Update character message field.
    */
   Essay.InputField.prototype.updateMessageChars = function () {
     if (typeof this.params.maximumLength !== 'undefined') {
       this.setMessageChars(this.params.remainingChars.replace(/@chars/g, this.computeRemainingChars()), false);
+    }
+    else if (typeof this.params.maximumWord !== 'undefined') {
+      this.setMessageChars(this.params.remainingWords.replace(/@words/g, this.computeRemainingWords()).replace(/@total/g, this.params.maximumWord), false);
     }
     else {
       // Use EMPTY_MESSAGE to keep height
