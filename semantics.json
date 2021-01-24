@@ -42,6 +42,7 @@
     "type": "text",
     "widget": "html",
     "importance": "high",
+    "optional": true,
     "description": "Describe your task here. The task description will appear above text input area.",
     "placeholder": "Summarize the book in 500 characters ...",
     "enterMode": "div",
