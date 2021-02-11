@@ -611,6 +611,7 @@ H5P.Essay = function ($, Question) {
     definition.type = 'http://id.tincanapi.com/activitytype/essay';
     definition.interactionType = 'long-fill-in';
     // Add title for h5p-php-reporting
+    definition.extensions = {};
     definition.extensions.title = definition.name['en-US'];
     /*
      * The official xAPI documentation discourages to use a correct response
