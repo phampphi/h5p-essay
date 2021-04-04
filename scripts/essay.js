@@ -863,6 +863,11 @@ H5P.Essay = function ($, Question) {
    * @return {Object} Current state.
    */
   Essay.prototype.getCurrentState = function () {
+    if (!this.inputField) 
+      return {
+        'inputField': ''
+      };
+
     this.inputField.updateMessageSaved(this.params.messageSave);
 
     // We could have just used a string, but you never know when you need to store more parameters
