@@ -145,6 +145,9 @@ H5P.Essay = function ($, Question) {
           this.setVideo(media);
         }
       }
+      else if (type == 'H5P.Audio' && media.params.files?.length > 0) { 
+        this.setAudio(self.contentId, media.params);
+      }
     }
 
     // Create InputField
@@ -208,6 +211,8 @@ H5P.Essay = function ($, Question) {
         that.showButton('show-solution');
       }
       that.hideButton('check-answer');
+      if (that.params.behaviour.enableTranscript)
+        that.showButton('show-transcript');
     }, true, {
       'aria-label': this.params.ariaCheck
     }, {});
@@ -218,6 +223,16 @@ H5P.Essay = function ($, Question) {
     }, false, {
       'aria-label': this.params.ariaRetry
     }, {});
+
+    // transcript button
+    if (that.params.behaviour.enableTranscript){
+      that.addButton('show-transcript', 'Transcript', function () {
+        that.showTranscript();
+        that.hideButton('show-transcript');
+      }, false, {
+        'aria-label': 'Transcript',
+      });
+    }
   };
 
   /**
@@ -307,6 +322,8 @@ H5P.Essay = function ($, Question) {
     this.hideButton('show-solution');
     this.hideButton('try-again');
     this.showButton('check-answer');
+    this.hideButton('show-transcript');
+    this.hideTranscript();
 
     this.inputField.enable();
     this.inputField.focus();

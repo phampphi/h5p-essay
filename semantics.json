@@ -3,7 +3,7 @@
     "name": "media",
     "type": "group",
     "label": "Media",
-    "importance": "medium",
+    "importance": "low",
     "fields": [
       {
         "name": "type",
@@ -12,7 +12,8 @@
         "importance": "medium",
         "options": [
           "H5P.Image 1.1",
-          "H5P.Video 1.5"
+          "H5P.Video 1.5",
+          "H5P.Audio 1.4"
         ],
         "optional": true,
         "description": "Optional media to display above the question."
@@ -382,6 +383,10 @@
             "label": "10 lines"
           },
           {
+            "value": "15",
+            "label": "15 lines"
+          },
+          {
             "value": "20",
             "label": "20 lines"
           }
@@ -394,6 +399,14 @@
         "type": "boolean",
         "importance": "low",
         "description": "If checked, learners can retry the task.",
+        "default": true,
+        "optional": true
+      },
+      {
+        "name": "enableTranscript",
+        "type": "boolean",
+        "label": "Enable \"Transcript\" button",
+        "importance": "low",
         "default": true,
         "optional": true
       },
