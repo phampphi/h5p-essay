@@ -170,7 +170,40 @@ H5P.Essay = function ($, Question) {
 
     // Register Buttons
     this.addButtons();
+
+    // Register timer
+    this.registerTimer();
   };
+
+  Essay.prototype.registerTimer = function(){
+    if (this.params.behaviour.maximumTime <= 0) return;
+
+    if (!this.timerDiv){
+      this.timerDiv = document.createElement('div');
+      this.timerDiv.classList.add('h5p-essay-timer');
+      this.setTimer(this.timerDiv);
+    } 
+    else
+      this.timerDiv.classList.remove('timeup');
+
+    if (!this.timer){
+      this.timer = new H5P.Timer();
+      this.timer.setMode(H5P.Timer.BACKWARD);
+    } 
+    else {
+      this.timer.stop();
+      this.timer.reset();
+      this.timerDiv.innerHTML = '';
+    }
+    
+    this.timer.setClockTime(this.params.behaviour.maximumTime*1000);
+    this.timer.notify('every_tenth_second', function() { 
+      this.timerDiv.innerHTML = H5P.Timer.toTimecode(this.timer.getTime()); 
+      if (this.timerDiv.innerHTML == '00:00')
+        this.timerDiv.classList.add('timeup');
+    }.bind(this));
+    this.timer.play();
+  }
 
   /**
    * Add all the buttons that shall be passed to H5P.Question.
@@ -329,6 +362,8 @@ H5P.Essay = function ($, Question) {
     this.inputField.focus();
 
     this.isAnswered = false;
+
+    this.registerTimer();
   };
 
   /**

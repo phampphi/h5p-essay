@@ -267,7 +267,7 @@
     "type": "group",
     "label": "Overall Feedback",
     "importance": "low",
-    "expanded": true,
+    "expanded": false,
     "fields": [
       {
         "name": "overallFeedback",
@@ -327,6 +327,17 @@
     "importance": "low",
     "description": "These options will let you control how the task behaves.",
     "fields": [
+      {
+        "name": "maximumTime",
+        "label": "Maximum Timer",
+        "type": "number",
+        "widget": "timecode",
+        "description": "Specify the maximum of time (in seconds) that the user is allowed to work on the task.",
+        "importance": "low",
+        "optional": true,
+        "default": "0",
+        "min": "0"
+      },
       {
         "name": "minimumLength",
         "label": "Minimum number of characters",

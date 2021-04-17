@@ -93,3 +93,11 @@
 .h5p-essay .h5p-essay-feedback-empty {
   color: #999999;
 }
+
+.h5p-essay-timer {
+  text-align: right;
+  font-size: larger;
+}
+.h5p-essay-timer.timeup{
+  color: red;
+}
