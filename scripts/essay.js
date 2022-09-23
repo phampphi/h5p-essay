@@ -54,6 +54,7 @@ H5P.Essay = function ($, Question) {
         feedbackHeader: 'Feedback',
         solutionTitle: 'Sample solution',
         remainingChars: 'Remaining characters: @chars',
+        remainingWords: '@words / @total Word Limit',
         notEnoughChars: 'You must enter at least @chars characters!',
         messageSave: 'saved',
         ariaYourResult: 'You got @score out of @total points',
@@ -221,7 +222,40 @@ H5P.Essay = function ($, Question) {
 
     // Register Buttons
     this.addButtons();
+
+    // Register timer
+    this.registerTimer();
   };
+
+  Essay.prototype.registerTimer = function(){
+    if (this.params.behaviour.maximumTime <= 0) return;
+
+    if (!this.timerDiv){
+      this.timerDiv = document.createElement('div');
+      this.timerDiv.classList.add('h5p-essay-timer');
+      this.setTimer(this.timerDiv);
+    } 
+    else
+      this.timerDiv.classList.remove('timeup');
+
+    if (!this.timer){
+      this.timer = new H5P.Timer();
+      this.timer.setMode(H5P.Timer.BACKWARD);
+    } 
+    else {
+      this.timer.stop();
+      this.timer.reset();
+      this.timerDiv.innerHTML = '';
+    }
+    
+    this.timer.setClockTime(this.params.behaviour.maximumTime*1000);
+    this.timer.notify('every_tenth_second', function() { 
+      this.timerDiv.innerHTML = H5P.Timer.toTimecode(this.timer.getTime()); 
+      if (this.timerDiv.innerHTML == '00:00')
+        this.timerDiv.classList.add('timeup');
+    }.bind(this));
+    this.timer.play();
+  }
 
   /**
    * Add all the buttons that shall be passed to H5P.Question.
@@ -255,7 +289,18 @@ H5P.Essay = function ($, Question) {
     }, false, {
       'aria-label': this.params.ariaRetry
     }, {});
+
+    // transcript button
+    if (that.params.behaviour.enableTranscript){
+      that.addButton('show-transcript', 'Transcript', function () {
+        that.showTranscript();
+        that.hideButton('show-transcript');
+      }, false, {
+        'aria-label': 'Transcript',
+      });
+    }
   };
+  
 
   /**
    * Handle the evaluation.
@@ -292,6 +337,10 @@ H5P.Essay = function ($, Question) {
       that.showButton('show-solution');
     }
     that.hideButton('check-answer');
+    
+    if (that.params.behaviour.enableTranscript){
+        that.showButton('show-transcript');
+    }
   };
 
   /**
@@ -420,13 +469,18 @@ H5P.Essay = function ($, Question) {
       this.showButton('check-answer');
     }
 
-    if (!params.skipClear) {
-      this.inputField.setText('');
+    this.hideButton('show-transcript');
+    this.hideTranscript();
+
+    if (params.skipClear) {
+      this.inputField.setText(''); 
     }
     this.inputField.enable();
     this.inputField.focus();
 
     this.isAnswered = false;
+
+    this.registerTimer();
   };
 
   /**
@@ -758,6 +812,9 @@ H5P.Essay = function ($, Question) {
     definition.description['en-US'] = definition.description[this.languageTag];
     definition.type = 'http://id.tincanapi.com/activitytype/essay';
     definition.interactionType = 'long-fill-in';
+    // Add title for h5p-php-reporting
+    definition.extensions = {};
+    definition.extensions.title = definition.name['en-US'];
     /*
      * The official xAPI documentation discourages to use a correct response
      * pattern it if the criteria for a question are complex and correct

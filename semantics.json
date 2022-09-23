@@ -58,7 +58,12 @@
       "hr",
       "pre",
       "code"
-    ]
+    ],
+    "font": {
+      "size": true,
+      "color": true,
+      "background": true
+    }
   },
   {
     "name": "placeholderText",
@@ -261,7 +266,7 @@
     "type": "group",
     "label": "Overall Feedback",
     "importance": "low",
-    "expanded": true,
+    "expanded": false,
     "fields": [
       {
         "name": "overallFeedback",
@@ -322,6 +327,17 @@
     "description": "These options will let you control how the task behaves.",
     "fields": [
       {
+        "name": "maximumTime",
+        "label": "Maximum Timer",
+        "type": "number",
+        "widget": "timecode",
+        "description": "Specify the maximum of time (in seconds) that the user is allowed to work on the task.",
+        "importance": "low",
+        "optional": true,
+        "default": "0",
+        "min": "0"
+      },
+      {
         "name": "minimumLength",
         "label": "Minimum number of characters",
         "type": "number",
@@ -335,6 +351,24 @@
         "label": "Maximum number of characters",
         "type": "number",
         "description": "Specify the maximum number of characters that the user can enter.",
+        "importance": "low",
+        "optional": true,
+        "min": "0"
+      },
+      {
+        "name": "minimumWord",
+        "label": "Minimum number of words",
+        "type": "number",
+        "description": "Specify the minimum number of words that the user must enter.",
+        "importance": "low",
+        "optional": true,
+        "min": "0"
+      },
+      {
+        "name": "maximumWord",
+        "label": "Maximum number of words",
+        "type": "number",
+        "description": "Specify the maximum number of words that the user can enter.",
         "importance": "low",
         "optional": true,
         "min": "0"
@@ -355,8 +389,20 @@
             "label": "3 lines"
           },
           {
+            "value": "5",
+            "label": "5 lines"
+          },
+          {
             "value": "10",
             "label": "10 lines"
+          },
+          {
+            "value": "15",
+            "label": "15 lines"
+          },
+          {
+            "value": "20",
+            "label": "20 lines"
           }
         ],
         "default": "10"
@@ -367,6 +413,14 @@
         "type": "boolean",
         "importance": "low",
         "description": "If checked, learners can retry the task.",
+        "default": true,
+        "optional": true
+      },
+      {
+        "name": "enableTranscript",
+        "type": "boolean",
+        "label": "Enable \"Transcript\" button",
+        "importance": "low",
         "default": true,
         "optional": true
       },
