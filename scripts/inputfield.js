@@ -16,19 +16,25 @@ var H5P = H5P || {};
 
   /**
    * @constructor
-   * @param {Object} params - Parameters.
+   * @param {object} params - Parameters.
    * @param {number} [params.inputFieldSize] - Number of rows for inputfield.
    * @param {number} [params.maximumLength] - Maximum text length.
    * @param {string} [params.placeholderText] - Placeholder text for input field.
    * @param {string} [params.remainingChars] - Label for remaining chars information.
    * @param {string} [params.taskDescription] - Task description (HTML).
-   * @param {Object} previousState - Content state of previous attempt.
+   * @param {object} [params.previousState] - Content state of previous attempt.
+   * @param {object} [callbacks] - Callbacks.
+   * @param {function} [callbacks.onInteracted] - Interacted callback.
    */
-  Essay.InputField = function (params, previousState) {
+  Essay.InputField = function (params, callbacks) {
     var that = this;
 
     this.params = params;
-    this.previousState = previousState;
+    this.previousState = params.previousState || '';
+
+    // Callbacks
+    this.callbacks = callbacks || {};
+    this.callbacks.onInteracted = this.callbacks.onInteracted || (function () {});
 
     // Sanitization
     this.params.taskDescription = this.params.taskDescription || '';
@@ -45,7 +51,33 @@ var H5P = H5P || {};
     this.inputField.setAttribute('rows', this.params.inputFieldSize);
     this.inputField.setAttribute('maxlength', this.params.maximumLength);
     this.inputField.setAttribute('placeholder', this.params.placeholderText);
-    this.setText(previousState);
+    this.setText(this.previousState);
+    this.oldValue = this.previousState;
+
+    this.containsText = this.oldValue.length > 0;
+
+    // Interacted listener
+    this.inputField.addEventListener('blur', function () {
+      if (that.oldValue !== that.getText()) {
+        that.callbacks.onInteracted({ updateScore: true });
+      }
+
+      that.oldValue = that.getText();
+    });
+
+    /*
+     * Extra listener required to be used in QuestionSet properly
+     */
+    this.inputField.addEventListener('input', function () {
+      if (
+        that.containsText && that.getText().length === 0 ||
+        !that.containsText && that.getText().length > 0
+      ) {
+        that.callbacks.onInteracted();
+      }
+
+      that.containsText = that.getText().length > 0;
+    });
 
     this.content = document.createElement('div');
     this.content.appendChild(this.inputField);
@@ -56,28 +88,30 @@ var H5P = H5P || {};
     this.container.appendChild(this.taskDescription);
     this.container.appendChild(this.content);
 
-    var statusWrapper = document.createElement('div');
-    statusWrapper.classList.add(WRAPPER_MESSAGE);
+    if (params.statusBar) {
+      var statusWrapper = document.createElement('div');
+      statusWrapper.classList.add(WRAPPER_MESSAGE);
 
-    this.statusChars = document.createElement('div');
-    this.statusChars.classList.add(CHAR_MESSAGE);
+      this.statusChars = document.createElement('div');
+      this.statusChars.classList.add(CHAR_MESSAGE);
 
-    statusWrapper.appendChild(this.statusChars);
+      statusWrapper.appendChild(this.statusChars);
 
-    ['change', 'keyup', 'paste'].forEach(function (event) {
-      that.inputField.addEventListener(event, function () {
-        that.updateMessageSaved('');
-        that.updateMessageChars();
+      ['change', 'keyup', 'paste'].forEach(function (event) {
+        that.inputField.addEventListener(event, function () {
+          that.updateMessageSaved('');
+          that.updateMessageChars();
+        });
       });
-    });
 
-    this.statusSaved = document.createElement('div');
-    this.statusSaved.classList.add(SAVE_MESSAGE);
-    statusWrapper.appendChild(this.statusSaved);
+      this.statusSaved = document.createElement('div');
+      this.statusSaved.classList.add(SAVE_MESSAGE);
+      statusWrapper.appendChild(this.statusSaved);
 
-    this.content.appendChild(statusWrapper);
+      this.content.appendChild(statusWrapper);
 
-    this.updateMessageChars();
+      this.updateMessageChars();
+    }
   };
 
   /**
@@ -127,17 +161,20 @@ var H5P = H5P || {};
 
   /**
    * Set the text for the InputField.
-   * @param {string|Object} previousState - Previous state that was saved.
+   * @param {string|Object} value - Previous state that was saved.
    */
-  Essay.InputField.prototype.setText = function (previousState) {
-    if (typeof previousState === 'undefined') {
+  Essay.InputField.prototype.setText = function (value) {
+    const type = (typeof value);
+    console.log(type);
+    if (type === 'undefined') {
       return;
     }
-    if (typeof previousState === 'string') {
-      this.inputField.innerHTML = previousState;
+
+    if (type === 'string') {
+      this.inputField.value = value;
     }
-    if (typeof previousState === 'object' && !Array.isArray(previousState)) {
-      this.inputField.innerHTML = previousState.inputField || '';
+    else if (type === 'object' && !Array.isArray(value)) {
+      this.inputField.value = value.inputField || '';
     }
   };
 
@@ -161,6 +198,10 @@ var H5P = H5P || {};
    * Update character message field.
    */
   Essay.InputField.prototype.updateMessageChars = function () {
+    if (!this.params.statusBar) {
+      return;
+    }
+
     if (typeof this.params.maximumLength !== 'undefined') {
       this.setMessageChars(this.params.remainingChars.replace(/@chars/g, this.computeRemainingChars()), false);
     }
@@ -178,6 +219,10 @@ var H5P = H5P || {};
    * @param {string} saved - Message to indicate the text was saved.
    */
   Essay.InputField.prototype.updateMessageSaved = function (saved) {
+    if (!this.params.statusBar) {
+      return;
+    }
+
     // Add/remove blending effect
     if (typeof saved === 'undefined' || saved === '') {
       this.statusSaved.classList.remove(ANIMATION_MESSAGE);
@@ -196,6 +241,10 @@ var H5P = H5P || {};
    * @param {boolean} important - If true, message will added a particular CSS class.
    */
   Essay.InputField.prototype.setMessageChars = function (message, important) {
+    if (!this.params.statusBar) {
+      return;
+    }
+
     if (typeof message !== 'string') {
       return;
     }

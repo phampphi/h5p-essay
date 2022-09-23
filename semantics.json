@@ -3,7 +3,7 @@
     "name": "media",
     "type": "group",
     "label": "Media",
-    "importance": "low",
+    "importance": "medium",
     "fields": [
       {
         "name": "type",
@@ -12,8 +12,8 @@
         "importance": "medium",
         "options": [
           "H5P.Image 1.1",
-          "H5P.Video 1.5",
-          "H5P.Audio 1.4"
+          "H5P.Video 1.6",
+          "H5P.Audio 1.5"
         ],
         "optional": true,
         "description": "Optional media to display above the question."
@@ -43,7 +43,6 @@
     "type": "text",
     "widget": "html",
     "importance": "high",
-    "optional": true,
     "description": "Describe your task here. The task description will appear above text input area.",
     "placeholder": "Summarize the book in 500 characters ...",
     "enterMode": "div",
@@ -81,7 +80,7 @@
     "label": "Sample solution",
     "importance": "high",
     "expanded": true,
-    "description": "You can optionally add a sample solution that's shown after the student created a text. It's called sample solution because there probably is not only one solution",
+    "description": "You can optionally add a sample solution that's shown after the student created a text. It's called sample solution because there probably is not only one solution.",
     "fields": [
       {
         "name": "introduction",
@@ -172,7 +171,7 @@
               "label": "Points",
               "default": 1,
               "description": "Points that the user will get if he/she includes this keyword or its alternatives in the answer.",
-              "min": 1
+              "min": 0
             },
             {
               "name": "occurrences",
@@ -532,6 +531,14 @@
     "label": "Text for \"Check\" button",
     "importance": "low",
     "default": "Check",
+    "common": true
+  },
+  {
+    "name": "submitAnswer",
+    "type": "text",
+    "label": "Text for \"Submit\" button",
+    "importance": "low",
+    "default": "Submit",
     "common": true
   },
   {
