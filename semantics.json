@@ -66,6 +66,14 @@
     }
   },
   {
+    "name": "questionText",
+    "label": "Question",
+    "type": "text",
+    "description": "This text describe the topic of the essay.",
+    "importance": "low",
+    "optional": true
+  },
+  {
     "name": "placeholderText",
     "label": "Help text",
     "type": "text",

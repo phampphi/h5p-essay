@@ -3,7 +3,7 @@
   "description": "Score a student's essay automatically",
   "majorVersion": 1,
   "minorVersion": 5,
-  "patchVersion": 3,
+  "patchVersion": 4,
   "runnable": 1,
   "embedTypes": [
     "iframe"
@@ -25,7 +25,7 @@
   ],
   "preloadedCss": [
     {
-      "path": "styles/essay.css"
+      "path": "styles/essay-pte.css"
     }
   ],
   "preloadedDependencies": [

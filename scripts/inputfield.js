@@ -54,6 +54,11 @@ var H5P = H5P || {};
     this.setText(this.previousState);
     this.oldValue = this.previousState;
 
+    // question
+    this.taskQuestion = document.createElement('div');
+    this.taskQuestion.classList.add(INPUT_LABEL);
+    this.taskQuestion.innerHTML = this.params.questionText;
+
     this.containsText = this.oldValue.length > 0;
 
     // Interacted listener
@@ -80,6 +85,7 @@ var H5P = H5P || {};
     });
 
     this.content = document.createElement('div');
+    this.content.appendChild(this.taskQuestion);
     this.content.appendChild(this.inputField);
 
     // Container

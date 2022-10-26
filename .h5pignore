@@ -1,4 +1,5 @@
 build
+language
 node_modules
 reports
 test
@@ -11,6 +12,7 @@ src
 .gitmodules
 .h5pignore
 .travis.yml
+crowdin.yml
 karma.conf.js
 webpack.config.js
 webpack.dev.config.js

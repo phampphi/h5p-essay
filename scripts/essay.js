@@ -36,6 +36,7 @@ H5P.Essay = function ($, Question) {
       {
         media: {},
         taskDescription: '',
+        questionText: '',
         solution: {},
         keywords: [],
         overallFeedback: [],
@@ -159,7 +160,7 @@ H5P.Essay = function ($, Question) {
       }
       else if (type === 'H5P.Audio') {
         if (media.params.files) {
-          this.setAudio(media);
+          this.audioInstance = this.setAudio(media);
         }
       }
     }
@@ -174,6 +175,7 @@ H5P.Essay = function ($, Question) {
     // Create InputField
     this.inputField = new H5P.Essay.InputField({
       taskDescription: this.params.taskDescription,
+      questionText: this.params.questionText,
       placeholderText: this.params.placeholderText,
       maximumLength: this.params.behaviour.maximumLength,
       remainingChars: this.params.remainingChars,
@@ -325,6 +327,15 @@ H5P.Essay = function ($, Question) {
     that.setViewState('results');
 
     that.inputField.disable();
+    that.pause();
+
+    if (that.audioInstance){
+      // when no controls, pause audio and enable controls
+      that.audioInstance.pause();
+      that.audioInstance.seekTo(0);
+      that.audioInstance.toggleControls(true); // force controls enabled
+    }
+  
     /*
      * Only set true on "check". Result computation may take some time if
      * there are many keywords due to the fuzzy match checking, so it's not
@@ -371,7 +382,6 @@ H5P.Essay = function ($, Question) {
    */
   Essay.prototype.handleInteracted = function (params) {
     params = params || {};
-
     // Deliberately keeping the state once answered
     this.isAnswered = this.isAnswered || this.inputField.getText().length > 0;
     if (params.updateScore) {
@@ -472,15 +482,23 @@ H5P.Essay = function ($, Question) {
     this.hideButton('show-transcript');
     this.hideTranscript();
 
-    if (params.skipClear) {
-      this.inputField.setText(''); 
-    }
+    this.inputField.setText(''); 
     this.inputField.enable();
     this.inputField.focus();
 
     this.isAnswered = false;
 
     this.registerTimer();
+
+    // Enable audio autoplay if neccessary
+    if (this.audioInstance ){
+      this.audioInstance.pause();
+      this.audioInstance.toggleControls(this.audioInstance.params.controls);
+      if (this.audioInstance.params.autoplay){
+        this.audioInstance.seekTo(0);
+        this.audioInstance.play();
+      }
+    }
   };
 
   /**
@@ -807,7 +825,7 @@ H5P.Essay = function ($, Question) {
     definition.name['en-US'] = definition.name[this.languageTag];
     // The H5P reporting module expects the "blanks" to be added to the description
     definition.description = {};
-    definition.description[this.languageTag] = this.params.taskDescription + Essay.FILL_IN_PLACEHOLDER;
+    definition.description[this.languageTag] = this.params.questionText + Essay.FILL_IN_PLACEHOLDER;
     // Fallback for h5p-php-reporting, expects en-US
     definition.description['en-US'] = definition.description[this.languageTag];
     definition.type = 'http://id.tincanapi.com/activitytype/essay';
@@ -815,11 +833,14 @@ H5P.Essay = function ($, Question) {
     // Add title for h5p-php-reporting
     definition.extensions = {};
     definition.extensions.title = definition.name['en-US'];
+    // Add sample answer
+    definition.sampleAnswer =  $('<div>' + this.params.solution.sample + '</div>').text();
     /*
      * The official xAPI documentation discourages to use a correct response
      * pattern it if the criteria for a question are complex and correct
      * responses cannot be exhaustively listed. They can't.
      */
+    console.log(definition);
     return definition;
   };
 
