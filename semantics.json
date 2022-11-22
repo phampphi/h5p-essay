@@ -591,6 +591,15 @@
     "description": "Message for remaining characters. You can use @chars which will be replaced by the corresponding number."
   },
   {
+    "name": "wordIndication",
+    "type": "text",
+    "label": "Number of words indication",
+    "importance": "low",
+    "common": true,
+    "default": "@words / @total limit",
+    "description": "Message to indicate the number of words. You can use @chars which will be replaced by the corresponding number."
+  },
+  {
     "name": "notEnoughChars",
     "type": "text",
     "label": "Not enough characters",

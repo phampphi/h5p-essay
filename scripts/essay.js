@@ -169,6 +169,8 @@ H5P.Essay = function ($, Question) {
     const statusBar = !!(
       this.params.behaviour.minimumLength ||
       this.params.behaviour.maximumLength ||
+      this.params.behaviour.minimumWord ||
+      this.params.behaviour.maximumWord ||
       (H5PIntegration && H5PIntegration.saveFreq && this.isRoot())
     );
 
@@ -178,7 +180,9 @@ H5P.Essay = function ($, Question) {
       questionText: this.params.questionText,
       placeholderText: this.params.placeholderText,
       maximumLength: this.params.behaviour.maximumLength,
+      maximumWord: this.params.behaviour.maximumWord,
       remainingChars: this.params.remainingChars,
+      wordIndication: this.params.wordIndication,
       inputFieldSize: this.params.behaviour.inputFieldSize,
       previousState: this.previousState,
       statusBar: statusBar
@@ -327,7 +331,6 @@ H5P.Essay = function ($, Question) {
     that.setViewState('results');
 
     that.inputField.disable();
-    that.pause();
 
     if (that.audioInstance){
       // when no controls, pause audio and enable controls
@@ -828,19 +831,18 @@ H5P.Essay = function ($, Question) {
     definition.description[this.languageTag] = this.params.questionText + Essay.FILL_IN_PLACEHOLDER;
     // Fallback for h5p-php-reporting, expects en-US
     definition.description['en-US'] = definition.description[this.languageTag];
-    definition.type = 'http://id.tincanapi.com/activitytype/essay';
+    definition.type = 'http://adlnet.gov/expapi/activities/cmi.interaction';
     definition.interactionType = 'long-fill-in';
     // Add title for h5p-php-reporting
     definition.extensions = {};
     definition.extensions.title = definition.name['en-US'];
     // Add sample answer
-    definition.sampleAnswer =  $('<div>' + this.params.solution.sample + '</div>').text();
+    definition.sampleAnswer = { label: 'Sample Answer', answer: $('<div>' + this.params.solution.sample + '</div>').text() };
     /*
      * The official xAPI documentation discourages to use a correct response
      * pattern it if the criteria for a question are complex and correct
      * responses cannot be exhaustively listed. They can't.
      */
-    console.log(definition);
     return definition;
   };
 

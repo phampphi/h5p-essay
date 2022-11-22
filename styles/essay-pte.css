@@ -7,6 +7,10 @@
   font-family: Oxygen, Arial, Helvetica, sans-serif;
 }
 
+.h5p-essay textarea{
+  font-family: Oxygen, Arial, Helvetica, sans-serif;
+}
+
 .h5p-essay .h5p-essay-title {
   width: auto;
   overflow-y: auto;
@@ -105,4 +109,10 @@
 }
 .h5p-essay-timer.timeup{
   color: red;
+}
+.h5p-essay-timer:before {
+  content: "\f017";
+  font-family: 'H5PFontAwesome4';
+  margin-right: 5px;
+  display: inline-block;
 }

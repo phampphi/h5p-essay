@@ -28,7 +28,6 @@ var H5P = H5P || {};
    */
   Essay.InputField = function (params, callbacks) {
     var that = this;
-
     this.params = params;
     this.previousState = params.previousState || '';
 
@@ -212,7 +211,7 @@ var H5P = H5P || {};
       this.setMessageChars(this.params.remainingChars.replace(/@chars/g, this.computeRemainingChars()), false);
     }
     else if (typeof this.params.maximumWord !== 'undefined') {
-      this.setMessageChars(this.params.remainingWords.replace(/@words/g, this.computeRemainingWords()).replace(/@total/g, this.params.maximumWord), false);
+      this.setMessageChars(this.params.wordIndication.replace(/@words/g, this.computeRemainingWords()).replace(/@total/g, this.params.maximumWord), false);
     }
     else {
       // Use EMPTY_MESSAGE to keep height
