@@ -347,15 +347,155 @@ H5P.Essay = function ($, Question) {
     that.isAnswered = true;
     that.handleEvaluation(params);
 
-    if (that.params.behaviour.enableSolutionsButton === true) {
-      that.showButton('show-solution');
+    if (that.params.aiScoring.url) {
+      $('.h5p-question-check-answer').prop("disabled", true).html('Checking');
+      that.calculateAIScore()
+        .then(result => that.displayAIScore(result))
+        .catch(error => {console.log('error', error); that.displayAIError()})
+        .finally(() => {
+          this.params.behaviour.enableSolutionsButton && this.showButton('show-solution');
+          this.hideButton('check-answer');
+          this.params.behaviour.enableTranscript && this.showButton('show-transcript');
+          $('.h5p-question-check-answer').prop("disabled", false).html('Check');
+          this.trigger('resize');
+        });
     }
-    that.hideButton('check-answer');
-    
-    if (that.params.behaviour.enableTranscript){
-        that.showButton('show-transcript');
+    else{
+      that.params.behaviour.enableSolutionsButton && that.showButton('show-solution');
+      that.hideButton('check-answer');
+      that.params.behaviour.enableTranscript && that.showButton('show-transcript');
     }
+    that.trigger('resize');
   };
+
+  Essay.prototype.calculateContentScoreByKeyWords = function (userContent) {
+    if (userContent == '' || this.params.aiScoring.keywords == '') return 0;
+
+    const keywords = this.params.aiScoring.keywords.split(',').map(a => decode(a.trim().toLowerCase()).split('|'));
+    let count = 0;
+    for (let keys of keywords) {
+      keys.find(k => userContent.indexOf(k) >= 0) && count++;
+    }
+    return count / keywords.length;
+  }
+
+  Essay.prototype.pteScore = (error) => {if (error == 0) return 2; else if (error < 5) return 1; else return 0;};
+
+  Essay.prototype.buildBlankAIResult = function () {
+    const result = {
+      Form: {score: 0, maxScore: this.params.aiScoring.maxFormScore},
+      Content: {score: 0, maxScore: this.params.aiScoring.maxContentScore},
+      Grammar: {score: 0, maxScore: 2}
+    }
+
+    if (this.params.aiScoring.vocabularySpelling || this.params.aiScoring.vocabulary) result.Vocabulary = {score: 0, maxScore: 2};
+    if (this.params.aiScoring.spelling) result.Spelling = {score: 0, maxScore: 2};
+    if (this.params.aiScoring.vocabularyRange) result['Vocabulary Range'] = {score: 0, maxScore: 2};
+    if (this.params.aiScoring.structureCoherence) result['Structure and Coherence'] = {score: 0, maxScore: 2};
+    if (this.params.aiScoring.linguisticRange) result['Linguistic Range'] = {score: 0, maxScore: 2};
+
+    return result;
+  }
+
+  Essay.prototype.calculateFormScore = function () {
+    const sentenceCount = this.inputField.getNumberOfSentences();
+    const wordCount = this.inputField.getNumberOfWords();
+
+    if (this.params.aiScoring.oneSentenceSummary && sentenceCount != 1) return 0;
+    else if (this.params.aiScoring.oneSentenceSummary){
+      var answer = this.inputField.getText().trim();
+      if (answer.charAt(0) != answer.charAt(0).toUpperCase() || answer.charAt(answer.length-1) != '.') return 0;
+    }
+
+    let formScore = 0;
+    for (let entry of this.params.aiScoring.wordCountRange){
+      if (entry.from <= wordCount && entry.to >= wordCount) {
+        formScore = entry.score;
+        break;
+      }
+    }
+    return formScore;
+  }
+
+  Essay.prototype.calculateAIScore = function () {
+    return new Promise((resolve, reject) => {
+      const formScore = this.calculateFormScore();
+      if (formScore == 0) {
+        resolve(this.buildBlankAIResult());
+      }
+
+      const strippedUserContent = stripPunctuation(this.inputField.getText().trim().toLowerCase());
+      const contentScore = this.calculateContentScoreByKeyWords(strippedUserContent);
+      if (contentScore == 0) {
+        resolve(this.buildBlankAIResult());
+      }
+
+      var headers = new Headers();
+      headers.append("Content-Type", "application/json");
+      headers.append("Authorization", `Bearer ${H5PIntegration.jwt}`);
+      var requestOptions = {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+          vocabularyRange: this.params.aiScoring.vocabularyRange ? 'true' : 'false',
+          text: this.inputField.getText(), 
+        }),
+        redirect: 'follow'
+      };
+      fetch(this.params.aiScoring.url, requestOptions)
+        .then(response => response.json())
+        .then(data => {
+          var result = {
+            Form: {score: formScore, maxScore: this.params.aiScoring.maxFormScore},
+            Content: {score: Math.round(contentScore * this.params.aiScoring.maxContentScore), maxScore: this.params.aiScoring.maxContentScore},
+            Grammar: {score: this.pteScore(data.grammar), maxScore: 2}
+          }
+          if (this.params.aiScoring.vocabularySpelling)
+            result.Vocabulary = {score: this.pteScore(data.vocabulary + data.spelling), maxScore: 2};
+          else if (this.params.aiScoring.vocabulary)
+            result.Vocabulary = {score: this.pteScore(data.vocabulary), maxScore: 2};
+          if (this.params.aiScoring.spelling) result.Spelling = {score: this.pteScore(data.spelling), maxScore: 2};
+          if (this.params.aiScoring.vocabularyRange && data.vocabularyRange) result['Vocabulary Range'] = {score: Math.round(data.vocabularyRange*2), maxScore: 2};
+          if (this.params.aiScoring.structureCoherence) 
+            result.Structure = {score: Math.round((this.pteScore(data.grammar)+this.pteScore(data.vocabulary))/2), maxScore: 2};
+          if (this.params.aiScoring.linguisticRange && data.vocabularyRange) 
+            result['Linguistic Range'] = {score: Math.round(((data.vocabularyRange*2)+this.pteScore(data.vocabulary))/2), maxScore: 2};
+          
+          resolve(result);
+        })
+        .catch(error => {console.log('error', error); reject(error)})
+    });
+  }
+
+  Essay.prototype.displayAIError = function () {
+    var container = $('<div id="aiScoreContainer"/>').attr('class', 'h5p-essay-solution-container'); 
+    $('<div />').attr('class', 'h5p-essay-solution-title').html('AI Score').appendTo(container);
+    var wrapper = $('<div />').attr('class', 'h5p-essay-solution-sample').appendTo(container);
+    $('<div />').attr('class', 'h5p-essay-solution-error').html('There is an error while scoring the answer. Please retry or contact administrator').appendTo(wrapper);
+
+    container.insertAfter('.h5p-question-content');
+  }
+
+  Essay.prototype.displayAIScore = function (result) {
+    var container = $('<div id="aiScoreContainer"/>').attr('class', 'h5p-essay-solution-container'); 
+    $('<div />').attr('class', 'h5p-essay-solution-title').html('AI Score').appendTo(container);
+    var wrapper = $('<div />').attr('class', 'h5p-essay-solution-sample').appendTo(container);
+
+    var table = $('<table cellpadding="0" cellspacing="0"/>').attr('class', 'scoreTable').appendTo(wrapper);
+    var header = $('<tr/>').attr('class', 'header').appendTo(table);
+    var row = $('<tr/>').appendTo(table);
+    var total = 0, max = 0;
+    for (let key in result){
+      $('<td/>').html(key).appendTo(header);
+      $('<td/>').html(`${result[key].score}/${result[key].maxScore}`).appendTo(row);
+      total += result[key].score;
+      max += result[key].maxScore;
+    }
+    $('<td/>').html('Total').appendTo(header);
+    $('<td/>').html(`${total}/${max}`).appendTo(row);
+
+    container.insertAfter('.h5p-question-content');
+  }
 
   /**
    * Get the user input from DOM.
@@ -473,6 +613,7 @@ H5P.Essay = function ($, Question) {
     this.setExplanation();
     this.removeFeedback();
     this.hideSolution();
+    $('#aiScoreContainer').remove();
 
     this.hideButton('show-solution');
     this.hideButton('try-again');

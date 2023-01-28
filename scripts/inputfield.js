@@ -200,6 +200,22 @@ var H5P = H5P || {};
   };
 
   /**
+   * Compute the number of sentences.
+   * @return {number} Number of sentences.
+   */
+   Essay.InputField.prototype.getNumberOfSentences = function () {
+    return this.inputField.value.trim().split(/[.!?]/).filter(a => a.trim().length > 0).length;
+  };
+
+  /**
+   * Compute the number of words.
+   * @return {number} Number of words.
+   */
+   Essay.InputField.prototype.getNumberOfWords = function () {
+    return this.inputField.value.trim().split(' ').filter(a => a.trim().length > 0).length;
+  };
+
+  /**
    * Update character message field.
    */
   Essay.InputField.prototype.updateMessageChars = function () {

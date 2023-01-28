@@ -24,7 +24,9 @@
 
 .h5p-essay .h5p-essay-solution-title {
   font-size: 1.125em;
+  margin-top: 0.5em;
   margin-bottom: 0.5em;
+  text-align: center;
 }
 
 .h5p-essay .h5p-essay-solution-introduction {
@@ -72,8 +74,8 @@
 }
 
 .h5p-essay .h5p-essay-input-field-label > p {
-  line-height: unset;
   padding: 0px 0px 5px 0px;
+  line-height: 1.5;
 }
 
 .h5p-essay .h5p-essay-input-field-message-wrapper {
@@ -115,4 +117,27 @@
   font-family: 'H5PFontAwesome4';
   margin-right: 5px;
   display: inline-block;
+}
+
+.h5p-essay .scoreTable {
+  width: 100%;
+  border: 1px solid #e0e0e0;
+  text-align: center;
+}
+.h5p-essay .scoreTable td {
+  border: 1px solid #e0e0e0;
+}
+
+.h5p-question-check-answer[disabled] {
+  cursor: default;
+  background-color: #8ca4e0!important;
+  box-shadow: none!important;
+}
+
+.h5p-essay .h5p-essay-solution-error {
+  font-size: 1.125em;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  text-align: center;
+  color: red;
 }

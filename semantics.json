@@ -270,6 +270,137 @@
     }
   },
   {
+    "name": "aiScoring",
+    "label": "AI Scoring",
+    "type": "group",
+    "fields": [
+      {
+        "name": "url",
+        "label": "Text Analysis URL",
+        "type": "text",
+        "widget": "text",
+        "description": "URL Endpoint to score the audio response",
+        "optional": true
+      },
+      {
+        "name": "wordCountRange",
+        "type": "list",
+        "widgets": [
+          {
+            "name": "RangeList",
+            "label": "Default"
+          }
+        ],
+        "label": "Define the number of words to be use in scoring",
+        "description": "Click the \"Add range\" button to add as many ranges as you need. Example: 0-40: Zero score, 40-49: 1, 50-70: 2",
+        "entity": "range",
+        "min": 1,
+        "defaultNum": 1,
+        "optional": true,
+        "field": {
+          "name": "wordCountRangeFields",
+          "type": "group",
+          "importance": "low",
+          "fields": [
+            {
+              "name": "from",
+              "type": "number",
+              "label": "Word Count Min",
+              "min": 0,
+              "default": 0
+            },
+            {
+              "name": "to",
+              "type": "number",
+              "label": "Word Count Max",
+              "min": 0,
+              "default": 500
+            },
+            {
+              "name": "score",
+              "type": "number",
+              "label": "Score for defined word count range",
+              "importance": "low",
+              "optional": true
+            }
+          ]
+        }
+      },
+      {
+        "name": "keywords",
+        "type": "text",
+        "widget": "textarea",
+        "label": "Keywords",
+        "optional": true
+      },
+      {
+        "name": "maxFormScore",
+        "type": "number",
+        "label": "Maximum Form Score",
+        "importance": "low",
+        "optional": true,
+        "default": 0
+      },
+      {
+        "name": "maxContentScore",
+        "type": "number",
+        "label": "Maximum Content Score",
+        "importance": "low",
+        "optional": true,
+        "default": 0
+      },
+      {
+        "name": "oneSentenceSummary",
+        "type": "boolean",
+        "label": "One-sentence Summary",
+        "importance": "low",
+        "default": false
+      },
+      {
+        "name": "vocabulary",
+        "type": "boolean",
+        "label": "Perform scoring on vocabulary",
+        "importance": "low",
+        "default": false
+      },
+      {
+        "name": "vocabularyRange",
+        "type": "boolean",
+        "label": "Perform scoring on vocabulary range",
+        "importance": "low",
+        "default": false
+      },
+      {
+        "name": "vocabularySpelling",
+        "type": "boolean",
+        "label": "Perform scoring on vocabulary and spelling together",
+        "importance": "low",
+        "default": false
+      },
+      {
+        "name": "spelling",
+        "type": "boolean",
+        "label": "Perform scoring on spelling",
+        "importance": "low",
+        "default": false
+      },
+      {
+        "name": "structureCoherence",
+        "type": "boolean",
+        "label": "Perform scoring on Structure and Coherence",
+        "importance": "low",
+        "default": false
+      },
+      {
+        "name": "linguisticRange",
+        "type": "boolean",
+        "label": "Perform scoring on Linguistic Range",
+        "importance": "low",
+        "default": false
+      }
+    ]
+  },
+  {
     "name": "overallFeedback",
     "type": "group",
     "label": "Overall Feedback",
