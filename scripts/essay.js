@@ -71,18 +71,20 @@ H5P.Essay = function ($, Question) {
     const defaultLanguage = (this.extras && this.extras.metadata) ? this.extras.metadata.defaultLanguage || 'en' : 'en';
     this.languageTag = Essay.formatLanguageCode(defaultLanguage);
 
-    this.score = 0;
     this.internalShowSolutionsCall = false;
 
     // Sanitize HTML encoding
     this.params.placeholderText = this.htmlDecode(this.params.placeholderText || '');
 
     // Get previous state from content data
-    if (typeof contentData !== 'undefined' && typeof contentData.previousState !== 'undefined') {
-      this.previousState = contentData.previousState;
-    }
-
+    this.previousState = (typeof contentData !== 'undefined' && typeof contentData.previousState !== 'undefined') ? contentData.previousState : {};
     this.isAnswered = this.previousState && this.previousState.inputField && this.previousState.inputField !== '' || false;
+    // get score from content data
+    this.scoreReady = this.previousState.scoreReady || 'NOT_READY';
+    this.result = this.previousState.result || null;
+    this.score = this.previousState.score || 0;
+    this.maxScore = this.previousState.maxScore || 0;
+
     /*
      * this.params.behaviour.enableSolutionsButton and this.params.behaviour.enableRetry are used by
      * contract at {@link https://h5p.org/documentation/developers/contracts#guides-header-8} and
@@ -231,32 +233,36 @@ H5P.Essay = function ($, Question) {
 
     // Register timer
     this.registerTimer();
+
+    // register handler for events triggered from QuestionSet
+    this.on('questionMoved', () => this.calculateScore());
+    this.on('retryScoring', () => this.calculateScore());
   };
 
-  Essay.prototype.registerTimer = function(){
+  Essay.prototype.registerTimer = function () {
     if (this.params.behaviour.maximumTime <= 0) return;
 
-    if (!this.timerDiv){
+    if (!this.timerDiv) {
       this.timerDiv = document.createElement('div');
       this.timerDiv.classList.add('h5p-essay-timer');
       this.setTimer(this.timerDiv);
-    } 
+    }
     else
       this.timerDiv.classList.remove('timeup');
 
-    if (!this.timer){
+    if (!this.timer) {
       this.timer = new H5P.Timer();
       this.timer.setMode(H5P.Timer.BACKWARD);
-    } 
+    }
     else {
       this.timer.stop();
       this.timer.reset();
       this.timerDiv.innerHTML = '';
     }
-    
-    this.timer.setClockTime(this.params.behaviour.maximumTime*1000);
-    this.timer.notify('every_tenth_second', function() { 
-      this.timerDiv.innerHTML = H5P.Timer.toTimecode(this.timer.getTime()); 
+
+    this.timer.setClockTime(this.params.behaviour.maximumTime * 1000);
+    this.timer.notify('every_tenth_second', function () {
+      this.timerDiv.innerHTML = H5P.Timer.toTimecode(this.timer.getTime());
       if (this.timerDiv.innerHTML == '00:00')
         this.timerDiv.classList.add('timeup');
     }.bind(this));
@@ -297,7 +303,7 @@ H5P.Essay = function ($, Question) {
     }, {});
 
     // transcript button
-    if (that.params.behaviour.enableTranscript){
+    if (that.params.behaviour.enableTranscript) {
       that.addButton('show-transcript', 'Transcript', function () {
         that.showTranscript();
         that.hideButton('show-transcript');
@@ -306,7 +312,7 @@ H5P.Essay = function ($, Question) {
       });
     }
   };
-  
+
 
   /**
    * Handle the evaluation.
@@ -332,13 +338,13 @@ H5P.Essay = function ($, Question) {
 
     that.inputField.disable();
 
-    if (that.audioInstance){
+    if (that.audioInstance) {
       // when no controls, pause audio and enable controls
       that.audioInstance.pause();
       that.audioInstance.seekTo(0);
       that.audioInstance.toggleControls(true); // force controls enabled
     }
-  
+
     /*
      * Only set true on "check". Result computation may take some time if
      * there are many keywords due to the fuzzy match checking, so it's not
@@ -351,7 +357,7 @@ H5P.Essay = function ($, Question) {
       $('.h5p-question-check-answer').prop("disabled", true).html('Checking');
       that.calculateAIScore()
         .then(result => that.displayAIScore(result))
-        .catch(error => {console.log('error', error); that.displayAIError()})
+        .catch(error => { console.log('error', error); that.displayAIError() })
         .finally(() => {
           this.params.behaviour.enableSolutionsButton && this.showButton('show-solution');
           this.hideButton('check-answer');
@@ -360,7 +366,7 @@ H5P.Essay = function ($, Question) {
           this.trigger('resize');
         });
     }
-    else{
+    else {
       that.params.behaviour.enableSolutionsButton && that.showButton('show-solution');
       that.hideButton('check-answer');
       that.params.behaviour.enableTranscript && that.showButton('show-transcript');
@@ -379,20 +385,18 @@ H5P.Essay = function ($, Question) {
     return count / keywords.length;
   }
 
-  Essay.prototype.pteScore = (error) => {if (error == 0) return 2; else if (error < 5) return 1; else return 0;};
-
   Essay.prototype.buildBlankAIResult = function () {
     const result = {
-      Form: {score: 0, maxScore: this.params.aiScoring.maxFormScore},
-      Content: {score: 0, maxScore: this.params.aiScoring.maxContentScore},
-      Grammar: {score: 0, maxScore: 2}
+      Form: { score: 0, maxScore: this.params.aiScoring.maxFormScore },
+      Content: { score: 0, maxScore: this.params.aiScoring.maxContentScore },
+      Grammar: { score: 0, maxScore: 2 }
     }
 
-    if (this.params.aiScoring.vocabularySpelling || this.params.aiScoring.vocabulary) result.Vocabulary = {score: 0, maxScore: 2};
-    if (this.params.aiScoring.spelling) result.Spelling = {score: 0, maxScore: 2};
-    if (this.params.aiScoring.vocabularyRange) result['Vocabulary Range'] = {score: 0, maxScore: 2};
-    if (this.params.aiScoring.structureCoherence) result['Structure and Coherence'] = {score: 0, maxScore: 2};
-    if (this.params.aiScoring.linguisticRange) result['Linguistic Range'] = {score: 0, maxScore: 2};
+    if (this.params.aiScoring.vocabularySpelling || this.params.aiScoring.vocabulary) result.Vocabulary = { score: 0, maxScore: 2 };
+    if (this.params.aiScoring.spelling) result.Spelling = { score: 0, maxScore: 2 };
+    if (this.params.aiScoring.vocabularyRange) result['Vocabulary Range'] = { score: 0, maxScore: 2 };
+    if (this.params.aiScoring.structureCoherence) result['Structure and Coherence'] = { score: 0, maxScore: 2 };
+    if (this.params.aiScoring.linguisticRange) result['Linguistic Range'] = { score: 0, maxScore: 2 };
 
     return result;
   }
@@ -402,13 +406,13 @@ H5P.Essay = function ($, Question) {
     const wordCount = this.inputField.getNumberOfWords();
 
     if (this.params.aiScoring.oneSentenceSummary && sentenceCount != 1) return 0;
-    else if (this.params.aiScoring.oneSentenceSummary){
+    else if (this.params.aiScoring.oneSentenceSummary) {
       var answer = this.inputField.getText().trim();
-      if (answer.charAt(0) != answer.charAt(0).toUpperCase() || answer.charAt(answer.length-1) != '.') return 0;
+      if (answer.charAt(0) != answer.charAt(0).toUpperCase() || answer.charAt(answer.length - 1) != '.') return 0;
     }
 
     let formScore = 0;
-    for (let entry of this.params.aiScoring.wordCountRange){
+    for (let entry of this.params.aiScoring.wordCountRange) {
       if (entry.from <= wordCount && entry.to >= wordCount) {
         formScore = entry.score;
         break;
@@ -422,12 +426,14 @@ H5P.Essay = function ($, Question) {
       const formScore = this.calculateFormScore();
       if (formScore == 0) {
         resolve(this.buildBlankAIResult());
+        return;
       }
 
       const strippedUserContent = stripPunctuation(this.inputField.getText().trim().toLowerCase());
       const contentScore = this.calculateContentScoreByKeyWords(strippedUserContent);
       if (contentScore == 0) {
         resolve(this.buildBlankAIResult());
+        return;
       }
 
       var headers = new Headers();
@@ -438,37 +444,39 @@ H5P.Essay = function ($, Question) {
         headers: headers,
         body: JSON.stringify({
           vocabularyRange: this.params.aiScoring.vocabularyRange ? 'true' : 'false',
-          text: this.inputField.getText(), 
+          text: this.inputField.getText(),
         }),
         redirect: 'follow'
       };
       fetch(this.params.aiScoring.url, requestOptions)
         .then(response => response.json())
         .then(data => {
+          var pteScore = (error) => { if (error == 0) return 2; else if (error < 5) return 1; else return 0; };
+
           var result = {
-            Form: {score: formScore, maxScore: this.params.aiScoring.maxFormScore},
-            Content: {score: Math.round(contentScore * this.params.aiScoring.maxContentScore), maxScore: this.params.aiScoring.maxContentScore},
-            Grammar: {score: this.pteScore(data.grammar), maxScore: 2}
+            Form: { score: formScore, maxScore: this.params.aiScoring.maxFormScore },
+            Content: { score: Math.round(contentScore * this.params.aiScoring.maxContentScore), maxScore: this.params.aiScoring.maxContentScore },
+            Grammar: { score: pteScore(data.grammar), maxScore: 2 }
           }
           if (this.params.aiScoring.vocabularySpelling)
-            result.Vocabulary = {score: this.pteScore(data.vocabulary + data.spelling), maxScore: 2};
+            result.Vocabulary = { score: pteScore(data.vocabulary + data.spelling), maxScore: 2 };
           else if (this.params.aiScoring.vocabulary)
-            result.Vocabulary = {score: this.pteScore(data.vocabulary), maxScore: 2};
-          if (this.params.aiScoring.spelling) result.Spelling = {score: this.pteScore(data.spelling), maxScore: 2};
-          if (this.params.aiScoring.vocabularyRange && data.vocabularyRange) result['Vocabulary Range'] = {score: Math.round(data.vocabularyRange*2), maxScore: 2};
-          if (this.params.aiScoring.structureCoherence) 
-            result.Structure = {score: Math.round((this.pteScore(data.grammar)+this.pteScore(data.vocabulary))/2), maxScore: 2};
-          if (this.params.aiScoring.linguisticRange && data.vocabularyRange) 
-            result['Linguistic Range'] = {score: Math.round(((data.vocabularyRange*2)+this.pteScore(data.vocabulary))/2), maxScore: 2};
-          
+            result.Vocabulary = { score: pteScore(data.vocabulary), maxScore: 2 };
+          if (this.params.aiScoring.spelling) result.Spelling = { score: pteScore(data.spelling), maxScore: 2 };
+          if (this.params.aiScoring.vocabularyRange && data.vocabularyRange) result['Vocabulary Range'] = { score: Math.round(data.vocabularyRange * 2), maxScore: 2 };
+          if (this.params.aiScoring.structureCoherence)
+            result.Structure = { score: Math.round((pteScore(data.grammar) + pteScore(data.vocabulary)) / 2), maxScore: 2 };
+          if (this.params.aiScoring.linguisticRange && data.vocabularyRange)
+            result['Linguistic Range'] = { score: Math.round(((data.vocabularyRange * 2) + pteScore(data.vocabulary)) / 2), maxScore: 2 };
+
           resolve(result);
         })
-        .catch(error => {console.log('error', error); reject(error)})
+        .catch(error => { console.log('error', error); reject(error) })
     });
   }
 
   Essay.prototype.displayAIError = function () {
-    var container = $('<div id="aiScoreContainer"/>').attr('class', 'h5p-essay-solution-container'); 
+    var container = $('<div id="aiScoreContainer"/>').attr('class', 'h5p-essay-solution-container');
     $('<div />').attr('class', 'h5p-essay-solution-title').html('AI Score').appendTo(container);
     var wrapper = $('<div />').attr('class', 'h5p-essay-solution-sample').appendTo(container);
     $('<div />').attr('class', 'h5p-essay-solution-error').html('There is an error while scoring the answer. Please retry or contact administrator').appendTo(wrapper);
@@ -477,7 +485,7 @@ H5P.Essay = function ($, Question) {
   }
 
   Essay.prototype.displayAIScore = function (result) {
-    var container = $('<div id="aiScoreContainer"/>').attr('class', 'h5p-essay-solution-container'); 
+    var container = $('<div id="aiScoreContainer"/>').attr('class', 'h5p-essay-solution-container');
     $('<div />').attr('class', 'h5p-essay-solution-title').html('AI Score').appendTo(container);
     var wrapper = $('<div />').attr('class', 'h5p-essay-solution-sample').appendTo(container);
 
@@ -485,7 +493,7 @@ H5P.Essay = function ($, Question) {
     var header = $('<tr/>').attr('class', 'header').appendTo(table);
     var row = $('<tr/>').appendTo(table);
     var total = 0, max = 0;
-    for (let key in result){
+    for (let key in result) {
       $('<td/>').html(key).appendTo(header);
       $('<td/>').html(`${result[key].score}/${result[key].maxScore}`).appendTo(row);
       total += result[key].score;
@@ -626,7 +634,7 @@ H5P.Essay = function ($, Question) {
     this.hideButton('show-transcript');
     this.hideTranscript();
 
-    this.inputField.setText(''); 
+    this.inputField.setText('');
     this.inputField.enable();
     this.inputField.focus();
 
@@ -635,14 +643,19 @@ H5P.Essay = function ($, Question) {
     this.registerTimer();
 
     // Enable audio autoplay if neccessary
-    if (this.audioInstance ){
+    if (this.audioInstance) {
       this.audioInstance.pause();
       this.audioInstance.toggleControls(this.audioInstance.params.controls);
-      if (this.audioInstance.params.autoplay){
+      if (this.audioInstance.params.autoplay) {
         this.audioInstance.seekTo(0);
         this.audioInstance.play();
       }
     }
+
+    this.result = null;
+    this.scoreReady = 'NOT_READY'; 
+    this.score = 0; 
+    this.maxScore = 0
   };
 
   /**
@@ -870,7 +883,7 @@ H5P.Essay = function ($, Question) {
           // Main keyword defined
           word = keyword.keyword;
         }
-        explanations.push({correct: word, text: keyword.options.feedbackMissed});
+        explanations.push({ correct: word, text: keyword.options.feedbackMissed });
       }
 
       // Keyword found and feedback is provided for this case
@@ -890,7 +903,7 @@ H5P.Essay = function ($, Question) {
             word = results[i][0].match;
             break;
         }
-        explanations.push({correct: word, text: keyword.options.feedbackIncluded});
+        explanations.push({ correct: word, text: keyword.options.feedbackIncluded });
       }
     });
 
@@ -978,7 +991,15 @@ H5P.Essay = function ($, Question) {
     definition.extensions = {};
     definition.extensions.title = definition.name['en-US'];
     // Add sample answer
-    definition.sampleAnswer = { label: 'Sample Answer', answer: $('<div>' + this.params.solution.sample + '</div>').text() };
+    definition.extensions.sampleAnswer = { label: 'Sample Answer', answer: $('<div>' + this.params.solution.sample + '</div>').text() };
+    // Add resultAI
+    if (!!this.result){
+      let xAPIResultAI = [];
+      for (let key in this.result){
+        xAPIResultAI.push({name: key, score: this.result[key].score, maxScore: this.result[key].maxScore});
+      }
+      definition.extensions.resultAI = xAPIResultAI;
+    }
     /*
      * The official xAPI documentation discourages to use a correct response
      * pattern it if the criteria for a question are complex and correct
@@ -1018,7 +1039,7 @@ H5P.Essay = function ($, Question) {
 
     while (((pos = haystack.indexOf(needle))) !== -1 && needle !== '') {
       if (H5P.TextUtilities.isIsolated(needle, haystack)) {
-        result.push({'keyword': needle, 'match': needle, 'index': front + pos});
+        result.push({ 'keyword': needle, 'match': needle, 'index': front + pos });
       }
       front += pos + needle.length;
       haystack = haystack.substr(pos + needle.length);
@@ -1051,9 +1072,9 @@ H5P.Essay = function ($, Question) {
     const regexp = new RegExp(needle.replace(/\*/g, Essay.CHARS_WILDCARD + '+'), this.getRegExpModifiers(caseSensitive));
     const result = [];
     let match;
-    while ((match = regexp.exec(haystack)) !== null ) {
-      if (H5P.TextUtilities.isIsolated(match[0], haystack, {'index': match.index})) {
-        result.push({'keyword': needle, 'match': match[0], 'index': match.index});
+    while ((match = regexp.exec(haystack)) !== null) {
+      if (H5P.TextUtilities.isIsolated(match[0], haystack, { 'index': match.index })) {
+        result.push({ 'keyword': needle, 'match': match[0], 'index': match.index });
       }
     }
     return result;
@@ -1079,10 +1100,10 @@ H5P.Essay = function ($, Question) {
     for (let size = -windowSize; size <= windowSize; size++) {
       for (let pos = 0; pos < haystack.length; pos++) {
         const straw = haystack.substr(pos, needle.length + size);
-        if (H5P.TextUtilities.areSimilar(needle, straw) && H5P.TextUtilities.isIsolated(straw, haystack, {'index': pos})) {
+        if (H5P.TextUtilities.areSimilar(needle, straw) && H5P.TextUtilities.isIsolated(straw, haystack, { 'index': pos })) {
           // This will only add the match if it's not a duplicate that we found already in the proximity of pos
           if (!this.contains(results, pos)) {
-            results.push({'keyword': needle, 'match': straw, 'index': pos});
+            results.push({ 'keyword': needle, 'match': straw, 'index': pos });
           }
         }
       }
@@ -1183,7 +1204,7 @@ H5P.Essay = function ($, Question) {
       for (let key in arguments[i]) {
         if (Object.prototype.hasOwnProperty.call(arguments[i], key)) {
           if (typeof arguments[0][key] === 'object' &&
-              typeof arguments[i][key] === 'object') {
+            typeof arguments[i][key] === 'object') {
             this.extend(arguments[0][key], arguments[i][key]);
           }
           else {
@@ -1261,7 +1282,11 @@ H5P.Essay = function ($, Question) {
 
     return {
       inputField: this.inputField.getText(),
-      viewState: this.viewState
+      viewState: this.viewState,
+      score: this.score,
+      maxScore: this.maxScore,
+      scoreReady: this.scoreReady,
+      result: this.result
     };
   };
 
@@ -1276,6 +1301,50 @@ H5P.Essay = function ($, Question) {
 
     this.viewState = state;
   };
+
+  Essay.prototype.calculateScore = function () {
+    if (!this.params.aiScoring.url || this.scoreReady === 'READY' || this.scoreReady === 'SCORING') return;
+    this.scoreReady === 'SCORING';
+    this.calculateAIScore()
+      .then(result => {
+        let total = 0, max = 0;
+        for (let key in result) {
+          total += result[key].score;
+          max += result[key].maxScore;
+        }
+        this.score = total;
+        this.maxScore = max;
+        this.result = result;
+        this.scoreReady = 'READY';
+      })
+      .catch(error => { 
+        console.log('error', error); 
+        this.result = null; 
+        this.scoreReady = 'ERROR'; 
+        this.trigger('scoringError'); 
+      });
+  }
+
+  Essay.prototype.isScoreReady = function () {
+    return !this.params.aiScoring.url || this.scoreReady === 'READY';
+  }
+
+  Essay.prototype.getTaggedScore = function () {
+    const taggedScore = {...this.result};
+    if (!this.params.behaviour.taggedScore || (!!this.params.aiScoring.url && this.scoreReady !== 'READY')) return taggedScore;
+
+    const paramTaggedScores = this.params.behaviour.taggedScore.split(',');
+    for (var pts of paramTaggedScores) {
+      const ts = pts.split('|');
+      const tag = ts[0];
+      const s = ts.length > 1 ? parseFloat(ts[1]) : null;
+      taggedScore[tag] = {
+        score: !!s ? (this.score * s) : this.score,
+        maxScore: this.maxScore
+      };
+    }
+    return taggedScore;
+  }
 
   /** @constant {string}
    * latin special chars: \u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF

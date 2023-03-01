@@ -22,3 +22,7 @@ package.json
 worknotes
 package-lock.json
 LICENSE
+_h5p
+*.h5p
+aiScore.md
+packageH5P.sh

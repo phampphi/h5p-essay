@@ -627,6 +627,13 @@
         }
       },
       {
+        "name": "taggedScore",
+        "type": "text",
+        "label": "Tagged Score",
+        "importance": "low",
+        "optional": true
+      },
+      {
         "name": "overrideCaseSensitive",
         "type": "select",
         "label": "Override case sensitive",
