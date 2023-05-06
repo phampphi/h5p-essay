@@ -355,9 +355,14 @@ H5P.Essay = function ($, Question) {
 
     if (that.params.aiScoring.url) {
       $('.h5p-question-check-answer').prop("disabled", true).html('Checking');
+      this.displayAIPending();
       that.calculateAIScore()
         .then(result => that.displayAIScore(result))
-        .catch(error => { console.log('error', error); that.displayAIError() })
+        .catch(error => {
+          setTimeout(() => {
+            console.log('error', error); that.displayAIError();
+          }, 10000)
+        })
         .finally(() => {
           this.params.behaviour.enableSolutionsButton && this.showButton('show-solution');
           this.hideButton('check-answer');
@@ -475,18 +480,34 @@ H5P.Essay = function ($, Question) {
     });
   }
 
+  Essay.prototype.createAIScoreContainer = function () {
+    var container = $('#aiScoreContainer');
+    if (container.length) {
+      container.empty();
+    }
+    else {
+      container = $('<div id="aiScoreContainer"/>').attr('class', 'h5p-essay-solution-container');
+      $('<div />').attr('class', 'h5p-essay-solution-title').html('AI Score').appendTo(container);
+      container.insertAfter('.h5p-question-content');
+    }
+    console.log(container.html())
+    return container;
+  }
+
+  Essay.prototype.displayAIPending = function () {
+    var container = this.createAIScoreContainer();
+    var wrapper = $('<div />').attr('class', 'h5p-essay-solution-sample').appendTo(container);
+    $('<div />').attr('class', 'h5p-essay-solution-pending').html('Your answer is being analysed. Please wait...').appendTo(wrapper);
+  }
+
   Essay.prototype.displayAIError = function () {
-    var container = $('<div id="aiScoreContainer"/>').attr('class', 'h5p-essay-solution-container');
-    $('<div />').attr('class', 'h5p-essay-solution-title').html('AI Score').appendTo(container);
+    var container = this.createAIScoreContainer();
     var wrapper = $('<div />').attr('class', 'h5p-essay-solution-sample').appendTo(container);
     $('<div />').attr('class', 'h5p-essay-solution-error').html('There is an error while scoring the answer. Please retry or contact administrator').appendTo(wrapper);
-
-    container.insertAfter('.h5p-question-content');
   }
 
   Essay.prototype.displayAIScore = function (result) {
-    var container = $('<div id="aiScoreContainer"/>').attr('class', 'h5p-essay-solution-container');
-    $('<div />').attr('class', 'h5p-essay-solution-title').html('AI Score').appendTo(container);
+    var container = this.createAIScoreContainer();
     var wrapper = $('<div />').attr('class', 'h5p-essay-solution-sample').appendTo(container);
 
     var table = $('<table cellpadding="0" cellspacing="0"/>').attr('class', 'scoreTable').appendTo(wrapper);
@@ -501,8 +522,6 @@ H5P.Essay = function ($, Question) {
     }
     $('<td/>').html('Total').appendTo(header);
     $('<td/>').html(`${total}/${max}`).appendTo(row);
-
-    container.insertAfter('.h5p-question-content');
   }
 
   /**
@@ -653,8 +672,8 @@ H5P.Essay = function ($, Question) {
     }
 
     this.result = null;
-    this.scoreReady = 'NOT_READY'; 
-    this.score = 0; 
+    this.scoreReady = 'NOT_READY';
+    this.score = 0;
     this.maxScore = 0
   };
 
@@ -993,10 +1012,10 @@ H5P.Essay = function ($, Question) {
     // Add sample answer
     definition.extensions.sampleAnswer = { label: 'Sample Answer', answer: $('<div>' + this.params.solution.sample + '</div>').text() };
     // Add resultAI
-    if (!!this.result){
+    if (!!this.result) {
       let xAPIResultAI = [];
-      for (let key in this.result){
-        xAPIResultAI.push({name: key, score: this.result[key].score, maxScore: this.result[key].maxScore});
+      for (let key in this.result) {
+        xAPIResultAI.push({ name: key, score: this.result[key].score, maxScore: this.result[key].maxScore });
       }
       definition.extensions.resultAI = xAPIResultAI;
     }
@@ -1317,11 +1336,11 @@ H5P.Essay = function ($, Question) {
         this.result = result;
         this.scoreReady = 'READY';
       })
-      .catch(error => { 
-        console.log('error', error); 
-        this.result = null; 
-        this.scoreReady = 'ERROR'; 
-        this.trigger('scoringError'); 
+      .catch(error => {
+        console.log('error', error);
+        this.result = null;
+        this.scoreReady = 'ERROR';
+        this.trigger('scoringError');
       });
   }
 
@@ -1330,7 +1349,7 @@ H5P.Essay = function ($, Question) {
   }
 
   Essay.prototype.getTaggedScore = function () {
-    const taggedScore = {...this.result};
+    const taggedScore = { ...this.result };
     if (!this.params.behaviour.taggedScore || (!!this.params.aiScoring.url && this.scoreReady !== 'READY')) return taggedScore;
 
     const paramTaggedScores = this.params.behaviour.taggedScore.split(',');

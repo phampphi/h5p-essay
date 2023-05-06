@@ -141,3 +141,9 @@
   text-align: center;
   color: red;
 }
+.h5p-essay .h5p-essay-solution-pending {
+  font-size: 1.125em;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  text-align: center;
+}
