@@ -147,3 +147,14 @@
   margin-bottom: 0.5em;
   text-align: center;
 }
+
+.h5p-essay .audio-transcript-container {
+  margin: 0;
+}
+.h5p-essay .audio-transcript-title {
+  margin-top: 0.5em;
+  text-align: center;
+}
+.h5p-essay .audio-transcript-text {
+  padding: 0.5em 1em 0.5em 1em;
+}

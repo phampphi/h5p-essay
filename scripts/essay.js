@@ -477,20 +477,16 @@ H5P.Essay = function ($, Question) {
           resolve(result);
         })
         .catch(error => { console.log('error', error); reject(error) })
+      // resolve(JSON.parse('{"grammar":0,"vocabulary":0,"spelling":0}'));
     });
   }
 
   Essay.prototype.createAIScoreContainer = function () {
-    var container = $('#aiScoreContainer');
-    if (container.length) {
-      container.empty();
-    }
-    else {
-      container = $('<div id="aiScoreContainer"/>').attr('class', 'h5p-essay-solution-container');
-      $('<div />').attr('class', 'h5p-essay-solution-title').html('AI Score').appendTo(container);
-      container.insertAfter('.h5p-question-content');
-    }
-    console.log(container.html())
+    $('.h5p-essay-solution-container').remove();
+    const container = $(`<div id="aiScoreContainer"/>`).attr('class', 'h5p-essay-solution-container');
+    $('<div />').attr('class', 'h5p-essay-solution-title').html('AI Score').appendTo(container);
+    const predecessor = this.content.parentNode;
+    predecessor.parentNode.insertBefore(container.get(0), predecessor.nextSibling);
     return container;
   }
 
@@ -640,7 +636,7 @@ H5P.Essay = function ($, Question) {
     this.setExplanation();
     this.removeFeedback();
     this.hideSolution();
-    $('#aiScoreContainer').remove();
+    $('.h5p-essay-solution-container').remove();
 
     this.hideButton('show-solution');
     this.hideButton('try-again');
@@ -754,35 +750,35 @@ H5P.Essay = function ($, Question) {
    * @return {Object} DOM object.
    */
   Essay.prototype.buildSolution = function () {
-    const solution = document.createElement('div');
-    solution.classList.add(SOLUTION_CONTAINER);
+      const solution = document.createElement('div');
+      solution.classList.add(SOLUTION_CONTAINER);
 
-    this.solutionAnnouncer = document.createElement('div');
-    this.solutionAnnouncer.setAttribute('tabindex', '0');
-    this.solutionAnnouncer.setAttribute('aria-label', this.params.ariaNavigatedToSolution);
-    this.solutionAnnouncer.addEventListener('focus', function (event) {
-      // Just temporary tabbable element. Will be announced by readspaker.
-      event.target.blur();
-      event.target.setAttribute('tabindex', '-1');
-    });
-    solution.appendChild(this.solutionAnnouncer);
+      this.solutionAnnouncer = document.createElement('div');
+      this.solutionAnnouncer.setAttribute('tabindex', '0');
+      this.solutionAnnouncer.setAttribute('aria-label', this.params.ariaNavigatedToSolution);
+      this.solutionAnnouncer.addEventListener('focus', function (event) {
+        // Just temporary tabbable element. Will be announced by readspaker.
+        event.target.blur();
+        event.target.setAttribute('tabindex', '-1');
+      });
+      solution.appendChild(this.solutionAnnouncer);
 
-    const solutionTitle = document.createElement('div');
-    solutionTitle.classList.add(SOLUTION_TITLE);
-    solutionTitle.innerHTML = this.params.solutionTitle;
-    solution.appendChild(solutionTitle);
+      const solutionTitle = document.createElement('div');
+      solutionTitle.classList.add(SOLUTION_TITLE);
+      solutionTitle.innerHTML = this.params.solutionTitle;
+      solution.appendChild(solutionTitle);
 
-    const solutionIntroduction = document.createElement('div');
-    solutionIntroduction.classList.add(SOLUTION_INTRODUCTION);
-    solutionIntroduction.innerHTML = this.params.solution.introduction;
-    solution.appendChild(solutionIntroduction);
+      const solutionIntroduction = document.createElement('div');
+      solutionIntroduction.classList.add(SOLUTION_INTRODUCTION);
+      solutionIntroduction.innerHTML = this.params.solution.introduction;
+      solution.appendChild(solutionIntroduction);
 
-    const solutionSample = document.createElement('div');
-    solutionSample.classList.add(SOLUTION_SAMPLE);
-    solution.appendChild(solutionSample);
+      const solutionSample = document.createElement('div');
+      solutionSample.classList.add(SOLUTION_SAMPLE);
+      solution.appendChild(solutionSample);
 
-    return solution;
-  };
+      return solution;
+    };
 
   /**
    * Hide the solution.
