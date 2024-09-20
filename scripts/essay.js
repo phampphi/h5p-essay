@@ -83,7 +83,7 @@ H5P.Essay = function ($, Question) {
     this.scoreReady = this.previousState.scoreReady || 'NOT_READY';
     this.result = this.previousState.result || null;
     this.score = this.previousState.score || 0;
-    this.maxScore = this.previousState.maxScore || 0;
+    this.scoreMastering = this.previousState.maxScore || 0;
 
     /*
      * this.params.behaviour.enableSolutionsButton and this.params.behaviour.enableRetry are used by
@@ -670,7 +670,7 @@ H5P.Essay = function ($, Question) {
     this.result = null;
     this.scoreReady = 'NOT_READY';
     this.score = 0;
-    this.maxScore = 0
+    this.scoreMastering = 0
   };
 
   /**
@@ -1299,7 +1299,7 @@ H5P.Essay = function ($, Question) {
       inputField: this.inputField.getText(),
       viewState: this.viewState,
       score: this.score,
-      maxScore: this.maxScore,
+      maxScore: this.scoreMastering,
       scoreReady: this.scoreReady,
       result: this.result
     };
@@ -1328,7 +1328,7 @@ H5P.Essay = function ($, Question) {
           max += result[key].maxScore;
         }
         this.score = total;
-        this.maxScore = max;
+        this.scoreMastering = max;
         this.result = result;
         this.scoreReady = 'READY';
       })
@@ -1355,7 +1355,7 @@ H5P.Essay = function ($, Question) {
       const s = ts.length > 1 ? parseFloat(ts[1]) : null;
       taggedScore[tag] = {
         score: !!s ? (this.score * s) : this.score,
-        maxScore: this.maxScore
+        maxScore: this.scoreMastering
       };
     }
     return taggedScore;

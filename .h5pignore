@@ -23,6 +23,6 @@ worknotes
 package-lock.json
 LICENSE
 _h5p
-*.h5p
+essay.h5p
 aiScore.md
 packageH5P.sh
